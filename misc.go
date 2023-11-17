@@ -2,6 +2,7 @@ package hdutils
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	gonanoid "github.com/matoous/go-nanoid"
 	"github.com/speps/go-hashids/v2"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"reflect"
 	"runtime/debug"
-	"strings"
 	"time"
 )
 
@@ -122,22 +122,15 @@ func GetNeo4jPathPattern(args ...int32) string {
 	return expr
 }
 
-func Hash(s string, length int, args ...string) string {
-	hdData := hashids.NewData()
-	hdData.MinLength = length
-	switch len(args) {
-	case 1:
-		hdData.Alphabet = args[0]
-	case 2:
-		hdData.Alphabet = args[0]
-		hdData.Salt = args[1]
-	}
-	h, _ := hashids.NewWithData(hdData)
-	value, _ := h.EncodeHex(s)
-	return value
+func HashString(s string, length int) string {
+	return HashBytes(StringToBytes(s), length)
 }
 
-func HashStringSlice(strSlice []string, salt string, length int, args ...string) string {
-	s := strings.Join(strSlice, "")
-	return Hash(s, length, args...)
+func HashBytes(data []byte, length int) string {
+	hashValue := fmt.Sprintf("%x", sha256.Sum256(data))
+	hdData := hashids.NewData()
+	hdData.MinLength = length
+	h, _ := hashids.NewWithData(hdData)
+	value, _ := h.EncodeHex(hashValue)
+	return value
 }
