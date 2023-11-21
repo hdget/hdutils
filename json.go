@@ -2,6 +2,7 @@ package hdutils
 
 import (
 	"encoding/json"
+	"github.com/elliotchance/pie/v2"
 	"reflect"
 )
 
@@ -9,6 +10,24 @@ var (
 	EmptyJsonArray  = StringToBytes("[]")
 	EmptyJsonObject = StringToBytes("{}")
 )
+
+// IsEmptyJsonArray 是否是空json array
+func IsEmptyJsonArray(data []byte) bool {
+	if len(data) == 0 {
+		return true
+	}
+
+	return pie.Equals(data, EmptyJsonArray)
+}
+
+// IsEmptyJsonObject 是否是空json object
+func IsEmptyJsonObject(data []byte) bool {
+	if len(data) == 0 {
+		return true
+	}
+
+	return pie.Equals(data, EmptyJsonObject)
+}
 
 // JsonArray 将slice转换成[]byte数据，如果slice为nil或空则返回空json array bytes
 func JsonArray(args ...any) []byte {
