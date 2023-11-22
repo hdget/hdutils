@@ -95,6 +95,21 @@ func CsvToInt32s(strValue string) []int32 {
 	return ToInt32Slice(tokens)
 }
 
+// CsvToInts 将逗号分隔的string尝试转换成[1,2,3...]的int slice
+// Csv means Comma Separated Value
+func CsvToInts(strValue string) []int {
+	if len(strValue) == 0 {
+		return nil
+	}
+
+	tokens := strings.Split(strValue, ",")
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	return ToIntSlice(tokens)
+}
+
 // Int64sToCsv 将int64 slice转换成用逗号分隔的字符串: 1,2,3
 func Int64sToCsv(int64s []int64) string {
 	return strings.Join(cast.ToStringSlice(int64s), ",")
@@ -107,26 +122,29 @@ func Int32sToCsv(int32s []int32) string {
 
 // ToInt64Slice 将string slice转换成[1,2,3...]的int64 slice
 func ToInt64Slice(strSlice []string) []int64 {
-	if len(strSlice) == 0 {
-		return nil
-	}
-	int64s := make([]int64, 0)
-	for _, item := range strSlice {
-		int64s = append(int64s, cast.ToInt64(item))
+	int64s := make([]int64, len(strSlice))
+	for i, item := range strSlice {
+		int64s[i] = cast.ToInt64(item)
 	}
 	return int64s
 }
 
 // ToInt32Slice 将string slice转换成[1,2,3...]的int32 slice
 func ToInt32Slice(strSlice []string) []int32 {
-	if len(strSlice) == 0 {
-		return nil
-	}
-	int32s := make([]int32, 0)
-	for _, item := range strSlice {
-		int32s = append(int32s, cast.ToInt32(item))
+	int32s := make([]int32, len(strSlice))
+	for i, item := range strSlice {
+		int32s[i] = cast.ToInt32(item)
 	}
 	return int32s
+}
+
+// ToIntSlice 将string slice转换成[1,2,3...]的int slice
+func ToIntSlice(strSlice []string) []int {
+	ints := make([]int, len(strSlice))
+	for i, item := range strSlice {
+		ints[i] = cast.ToInt(item)
+	}
+	return ints
 }
 
 // ToCamelCase converts from underscore separated form to camel case form.
