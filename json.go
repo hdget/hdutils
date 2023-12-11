@@ -35,7 +35,10 @@ func JsonArray(args ...any) []byte {
 		return EmptyJsonArray
 	}
 
-	if reflect.TypeOf(args[0]).Kind() != reflect.Slice {
+	v := reflect.ValueOf(args[0])
+	if v.Kind() != reflect.Slice {
+		return EmptyJsonArray
+	} else if v.Cap() == 0 {
 		return EmptyJsonArray
 	}
 
@@ -49,8 +52,14 @@ func JsonObject(args ...any) []byte {
 		return EmptyJsonObject
 	}
 
-	// 如果传入值为slice,则返回empty object
-	if reflect.TypeOf(args[0]).Kind() == reflect.Slice {
+	v := reflect.ValueOf(args[0])
+	if v.Kind() == reflect.Pointer {
+		v = reflect.ValueOf(v.Elem())
+	}
+
+	if v.Kind() != reflect.Struct {
+		return EmptyJsonObject
+	} else if v.IsZero() {
 		return EmptyJsonObject
 	}
 
