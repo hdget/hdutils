@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	gonanoid "github.com/matoous/go-nanoid"
+	"github.com/matoous/go-nanoid/v2"
 	"github.com/speps/go-hashids/v2"
+	"hash/fnv"
 	"log"
 	"math"
 	"os"
@@ -97,6 +98,12 @@ func GetPagePositions(data interface{}, pageSize int) [][]int {
 func GenerateRandString(n int) string {
 	randStr, _ := gonanoid.Generate(hashids.DefaultAlphabet, n)
 	return randStr
+}
+
+func HashId(s string) uint32 {
+	h := fnv.New32a()
+	_, _ = h.Write(StringToBytes(s))
+	return h.Sum32()
 }
 
 // GetNeo4jPathPattern 解析Neo4j语法的Variable-length pattern

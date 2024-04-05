@@ -1,7 +1,7 @@
 package hdutils
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"reflect"
 	"runtime"
 	"strings"
@@ -136,43 +136,39 @@ func (h *hdReflector) GetSliceItems(sv reflect.Value) []ValueItem {
 	return items
 }
 
-// StructSet 给结构体设置field类型的值
+// StructSet 通过反射给结构体obj的nilField类型匹配的field赋值val
 func (*hdReflector) StructSet(obj any, nilField any, val any) error {
 	if obj == nil {
 		return errors.New("nil struct")
+	}
+
+	destv := reflect.ValueOf(obj)
+	if destv.Kind() == reflect.Ptr && !destv.Elem().CanSet() {
+		return errors.New("struct should be a pointer")
+	} else {
+		destv = destv.Elem()
 	}
 
 	if val == nil {
 		return errors.New("cannot set to zero value")
 	}
 
-	// struct有可能是指针
-	var st reflect.Type
-	var sv reflect.Value
-	if t := reflect.TypeOf(obj); t.Kind() == reflect.Ptr {
-		st = reflect.TypeOf(obj).Elem()
-		sv = reflect.ValueOf(obj).Elem()
-	} else {
-		st = reflect.TypeOf(obj)
-		sv = reflect.ValueOf(obj)
-	}
-
-	numField := st.NumField()
+	numField := destv.NumField()
 	for i := 0; i < numField; i++ {
-		field := sv.Field(i)
+		field := destv.Field(i)
 		fieldType := field.Type().String()
 		emptyFieldType := reflect.TypeOf(nilField).String()
 		// 找到第一个匹配类型的field设置进去
 		if fieldType == emptyFieldType || "*"+fieldType == emptyFieldType {
 			if !field.CanSet() {
-				return errors.New("field cannot set")
+				return errors.New("struct field cannot set")
 			}
 
 			field.Set(reflect.ValueOf(val))
 			return nil
 		}
 	}
-	return errors.New("filed not found")
+	return errors.New("struct field not found")
 }
 
 // MatchReceiverMethods 匹配receiver的所有methods中与matchFn签名参数类似的方法
