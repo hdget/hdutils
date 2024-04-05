@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	hashids "github.com/speps/go-hashids/v2"
 	"hash/fnv"
 	"log"
 	"math"
@@ -12,10 +13,6 @@ import (
 	"reflect"
 	"runtime/debug"
 	"time"
-)
-
-const (
-	defaultAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 )
 
 // RecordErrorStack 将错误信息保存到错误日志文件中
