@@ -4,12 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-<<<<<<< HEAD
-	gonanoid "github.com/matoous/go-nanoid"
-=======
-	"github.com/matoous/go-nanoid/v2"
-	"github.com/speps/go-hashids/v2"
->>>>>>> 9d0bfb2a26052bce83e3c205a1dc5a461f88e260
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	hashids "github.com/speps/go-hashids/v2"
 	"hash/fnv"
 	"log"
 	"math"
