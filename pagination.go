@@ -75,7 +75,7 @@ func GetStartEndPosition(page, pageSize, total int64) (int64, int64) {
 }
 
 // GetLimitClause 获取limit sql子句
-func (p *Pagination) GetLimitClause() string {
+func (p Pagination) GetLimitClause() string {
 	if p.Offset == 0 {
 		return fmt.Sprintf("LIMIT %d", p.PageSize)
 	}
