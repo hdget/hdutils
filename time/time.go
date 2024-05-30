@@ -1,4 +1,4 @@
-package hdutils
+package time
 
 import (
 	"fmt"
@@ -55,9 +55,9 @@ func IsValidBeginEndTime(strBeginTime, strEndTime string) error {
 
 // GetBetweenDays
 // @description   获取开始日期和结束日期中间的所有日期列表
-// @param beginDate string 开始时间,格式为：2020-04-01
-// @param args ...string 如果指定了结束时间,则用结束时间,否则用当前时间,格式为：2020-04-01
-// @return 在这段日期时间内的所有天包含起始日期 []string,如:[2020-04-01 2020-04-02 2020-04-03]
+// @param beginDate text 开始时间,格式为：2020-04-01
+// @param args ...text 如果指定了结束时间,则用结束时间,否则用当前时间,格式为：2020-04-01
+// @return 在这段日期时间内的所有天包含起始日期 []text,如:[2020-04-01 2020-04-02 2020-04-03]
 func GetBetweenDays(format, beginDate string, args ...string) ([]string, error) {
 	beginTime, err := time.ParseInLocation(LayoutIsoDate, beginDate, DefaultTimeLocation)
 	if err != nil {

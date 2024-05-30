@@ -1,4 +1,4 @@
-package hdutils
+package reflect
 
 import (
 	"errors"
@@ -7,15 +7,22 @@ import (
 	"strings"
 )
 
-type Reflector interface {
+type Utils interface {
 	GetFuncName(fn any) string                                     //从函数实例获取函数名
 	GetStructName(obj any) string                                  // 从实例获取结构名
 	GetVarName(v any) string                                       // 获取变量名
 	StructSet(obj any, nilField any, val any) error                // 给结构体设置field类型的值
 	MatchReceiverMethods(receiver any, matchFn any) map[string]any // 匹配receiver的所有methods中与matchFn签名参数类似的方法
 	GetFuncSignature(fn any) string                                // 获取函数签名信息
-	InspectValue(v any) *ValueMeta                                 // 检索Value的信息
+	InspectValue(v any) Value                                      // 检索Value的信息
 	FuncEqual(fn1, fn2 any) bool                                   // 函数是否相等
+}
+
+type Value struct {
+	Name      string
+	IsPointer bool
+	Kind      string
+	Items     []ValueItem
 }
 
 type ValueItem struct {
@@ -24,28 +31,14 @@ type ValueItem struct {
 	Value any
 }
 
-type ValueMeta struct {
-	Name      string
-	IsPointer bool
-	Kind      string
-	Items     []ValueItem
-}
-
-type hdReflector struct {
-}
-
-func Reflect() Reflector {
-	return &hdReflector{}
-}
-
 // GetFuncName 从函数实例获取函数名
-func (*hdReflector) GetFuncName(fn any) string {
+func GetFuncName(fn any) string {
 	tokens := strings.Split(runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name(), ".")
 	return strings.Split(tokens[len(tokens)-1], "-")[0]
 }
 
 // GetStructName 获取结构名
-func (*hdReflector) GetStructName(obj any) string {
+func GetStructName(obj any) string {
 	if obj == nil {
 		return ""
 	}
@@ -63,7 +56,7 @@ func (*hdReflector) GetStructName(obj any) string {
 }
 
 // GetVarName 获取变量名
-func (*hdReflector) GetVarName(v any) string {
+func GetVarName(v any) string {
 	if t := reflect.TypeOf(v); t.Kind() == reflect.Ptr {
 		return "*" + t.Elem().Name()
 	} else {
@@ -71,13 +64,13 @@ func (*hdReflector) GetVarName(v any) string {
 	}
 }
 
-func (*hdReflector) FuncEqual(fn1, fn2 any) bool {
+func FuncEqual(fn1, fn2 any) bool {
 	v1 := reflect.ValueOf(&fn1).Elem()
 	v2 := reflect.ValueOf(&fn2).Elem()
 	return v1.Interface() == v2.Interface()
 }
 
-func (h *hdReflector) InspectValue(v any) *ValueMeta {
+func InspectValue(v any) *Value {
 	var isPointer bool
 	var st reflect.Type
 	var sv reflect.Value
@@ -93,12 +86,12 @@ func (h *hdReflector) InspectValue(v any) *ValueMeta {
 	var items []ValueItem
 	switch st.Kind() {
 	case reflect.Struct:
-		items = h.GetStructFields(st, sv)
+		items = GetStructFields(st, sv)
 	case reflect.Slice:
-		items = h.GetSliceItems(sv)
+		items = GetSliceItems(sv)
 	}
 
-	return &ValueMeta{
+	return &Value{
 		Name:      st.Name(),
 		IsPointer: isPointer,
 		Kind:      st.Kind().String(),
@@ -106,7 +99,7 @@ func (h *hdReflector) InspectValue(v any) *ValueMeta {
 	}
 }
 
-func (h *hdReflector) GetStructFields(st reflect.Type, sv reflect.Value) []ValueItem {
+func GetStructFields(st reflect.Type, sv reflect.Value) []ValueItem {
 	fields := make([]ValueItem, 0)
 	for i := 0; i < st.NumField(); i++ {
 		switch v := sv.Field(i).Interface().(type) {
@@ -121,7 +114,7 @@ func (h *hdReflector) GetStructFields(st reflect.Type, sv reflect.Value) []Value
 	return fields
 }
 
-func (h *hdReflector) GetSliceItems(sv reflect.Value) []ValueItem {
+func GetSliceItems(sv reflect.Value) []ValueItem {
 	items := make([]ValueItem, 0)
 	for i := 0; i < sv.Len(); i++ {
 		switch v := sv.Index(i).Interface().(type) {
@@ -137,7 +130,7 @@ func (h *hdReflector) GetSliceItems(sv reflect.Value) []ValueItem {
 }
 
 // StructSet 通过反射给结构体obj的nilField类型匹配的field赋值val
-func (*hdReflector) StructSet(obj any, nilField any, val any) error {
+func StructSet(obj any, nilField any, val any) error {
 	if obj == nil {
 		return errors.New("nil struct")
 	}
@@ -172,7 +165,7 @@ func (*hdReflector) StructSet(obj any, nilField any, val any) error {
 }
 
 // MatchReceiverMethods 匹配receiver的所有methods中与matchFn签名参数类似的方法
-func (*hdReflector) MatchReceiverMethods(receiver any, matchFn any) map[string]any {
+func MatchReceiverMethods(receiver any, matchFn any) map[string]any {
 	if receiver == nil {
 		return nil
 	}
@@ -192,7 +185,7 @@ func (*hdReflector) MatchReceiverMethods(receiver any, matchFn any) map[string]a
 }
 
 // GetFuncSignature 获取函数签名信息
-func (*hdReflector) GetFuncSignature(fn any) string {
+func GetFuncSignature(fn any) string {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func {
 		return ""

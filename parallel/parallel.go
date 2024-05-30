@@ -1,8 +1,10 @@
 // Package parallel
 // 实现了可优雅关闭退出所有的actors
 // Group
-//   | ---> 执行actor
-//   | ---> 退出处理
+//
+//	| ---> 执行actor
+//	| ---> 退出处理
+//
 // 其类似errgroup, 但其不要求actor goroutines去理解上下文的意思，这样它可以在更多的场景下使用.
 // 例如, 处理net.Listeners的connections, 或者从关闭的io.Reader中读取输入
 package parallel
@@ -57,6 +59,6 @@ func (g *Group) Run() error {
 		<-errors
 	}
 
-	// Return the original error.
+	// Return the original panic.
 	return err
 }

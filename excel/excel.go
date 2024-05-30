@@ -1,4 +1,4 @@
-package hdutils
+package excel
 
 import (
 	"fmt"
@@ -8,18 +8,18 @@ import (
 	"reflect"
 )
 
-type ExcelHelper interface {
+type Utils interface {
 	Save(dir, filename string) error
 	Read() ([]byte, error)
 	Close() error
 }
 
-type ec struct {
+type excelUtilsImpl struct {
 	sheetName  string
 	header     reflect.Type
 	f          *excelize.File
 	colStyle   int
-	rows       []interface{}
+	rows       []any
 	cellStyles map[string]int // 单元格样式， axis=>style value
 }
 
@@ -28,9 +28,9 @@ const (
 	defaultSheetName      = "Sheet1"
 )
 
-type ExcelOption func(*ec)
+type Option func(*excelUtilsImpl)
 
-func NewExcelHelper(rows []interface{}, options ...ExcelOption) (ExcelHelper, error) {
+func New(rows []any, options ...Option) (Utils, error) {
 	if len(rows) == 0 {
 		return nil, fmt.Errorf("empty rows")
 	}
@@ -41,7 +41,7 @@ func NewExcelHelper(rows []interface{}, options ...ExcelOption) (ExcelHelper, er
 		return nil, errors.Wrap(err, "get excel header type")
 	}
 
-	ex := &ec{
+	ex := &excelUtilsImpl{
 		sheetName:  defaultSheetName,
 		header:     headerType,
 		rows:       rows,
@@ -69,13 +69,13 @@ func NewExcelHelper(rows []interface{}, options ...ExcelOption) (ExcelHelper, er
 	return ex, nil
 }
 
-func (ec *ec) Close() error {
+func (ec *excelUtilsImpl) Close() error {
 	ec.rows = nil
 	return ec.f.Close()
 }
 
 // Save 保存Excel文件
-func (ec *ec) Save(dir, filename string) error {
+func (ec *excelUtilsImpl) Save(dir, filename string) error {
 	err := ec.process(ec.rows)
 	if err != nil {
 		return errors.Wrap(err, "process rows")
@@ -89,7 +89,7 @@ func (ec *ec) Save(dir, filename string) error {
 	return nil
 }
 
-func (ec *ec) Read() ([]byte, error) {
+func (ec *excelUtilsImpl) Read() ([]byte, error) {
 	err := ec.process(ec.rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "process rows")
@@ -104,28 +104,28 @@ func (ec *ec) Read() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func WithColStyle(style *excelize.Style) ExcelOption {
-	return func(e *ec) {
+func WithColStyle(style *excelize.Style) Option {
+	return func(e *excelUtilsImpl) {
 		e.colStyle, _ = e.f.NewStyle(style)
 	}
 }
 
-func WithCellStyles(styles map[string]*excelize.Style) ExcelOption {
-	return func(e *ec) {
+func WithCellStyles(styles map[string]*excelize.Style) Option {
+	return func(e *excelUtilsImpl) {
 		for axis, style := range styles {
 			e.cellStyles[axis], _ = e.f.NewStyle(style)
 		}
 	}
 }
 
-func WithSheetName(name string) ExcelOption {
-	return func(e *ec) {
+func WithSheetName(name string) Option {
+	return func(e *excelUtilsImpl) {
 		e.sheetName = name
 	}
 }
 
 // process 处理数据
-func (ec *ec) process(rows []interface{}) error {
+func (ec *excelUtilsImpl) process(rows []any) error {
 	// 输出数据
 	for i := 0; i < ec.header.NumField(); i++ {
 		// 输出表头
@@ -170,7 +170,7 @@ func (ec *ec) process(rows []interface{}) error {
 }
 
 // getExcelHeader 通过反射获取表格的标题属性, 生成表格表头
-func getExcelHeaderType(rows []interface{}) (reflect.Type, error) {
+func getExcelHeaderType(rows []any) (reflect.Type, error) {
 	// 取第一行并获取Elem()
 	t := reflect.TypeOf(rows[0])
 	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
