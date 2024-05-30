@@ -38,8 +38,8 @@ func LogFatal(msg string, keyvals ...any) {
 	logPrint(loggerLevelFatal, msg, keyvals...)
 }
 
-// parseArgs  解析error和message用统一格式展示出来
-func parseArgs(keyvals ...any) (string, error, map[string]any) {
+// ParseArgs  解析error和message用统一格式展示出来
+func ParseArgs(keyvals ...any) (string, error, map[string]any) {
 	countArgs := len(keyvals)
 	// 如果可变参数个数为0，肯定没有error
 	if countArgs == 0 {
@@ -77,7 +77,7 @@ func parseArgs(keyvals ...any) (string, error, map[string]any) {
 
 // logPrint log structure message and key values
 func logPrint(level logLevel, msg string, keyvals ...any) {
-	_, errValue, fields := parseArgs(keyvals...)
+	_, errValue, fields := ParseArgs(keyvals...)
 
 	outputs := make([]string, 0)
 	for k, v := range fields {
