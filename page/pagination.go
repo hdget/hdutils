@@ -1,8 +1,7 @@
-package hdutils
+package page
 
 import (
 	"fmt"
-	"math"
 )
 
 const (
@@ -13,11 +12,6 @@ type Pagination struct {
 	Page     uint64 // 第几页
 	PageSize uint64 // 每页几项
 	Offset   uint64 // 偏移起始值
-}
-
-type Page struct {
-	Start int64
-	End   int64
 }
 
 // NewPagination 获取分页对象
@@ -35,27 +29,6 @@ func NewPagination(page, pageSize int64) Pagination {
 	offset := uint64((page - 1) * pageSize)
 
 	return Pagination{Page: uint64(page), PageSize: uint64(pageSize), Offset: offset}
-}
-
-// NewPages 获取带有起始值的页面的数组
-// @return 返回一个Page数组
-func NewPages(total, pageSize int64) []Page {
-	totalPage := int64(math.Ceil(float64(total) / float64(pageSize)))
-
-	pages := make([]Page, totalPage)
-	for i := int64(0); i < totalPage; i++ {
-		start := i * pageSize
-		end := (i + 1) * pageSize
-		if end > total {
-			end = total
-		}
-
-		pages[i] = Page{
-			Start: start,
-			End:   end,
-		}
-	}
-	return pages
 }
 
 // GetStartEndPosition 如果是按列表slice进行翻页的话， 计算slice的起始index
@@ -90,7 +63,7 @@ func (p Pagination) GetLimitClause() string {
 //
 // 2. 假如前端传过来了last_pk, 那么返回值是 last_pk, LIMIT子句(LIMIT PageSize)
 // e,g: 123,"LIMIT 10" => 在数据库查询时可能会被组装成 WHERE pk > 123 ...  LIMIT 10
-//func (p *Pagination) GetSQLClause(total int64) string {
+//func (p *Pagination) GetSQLClause(total int64) text {
 //	if p == nil {
 //		return ""
 //	}
@@ -105,4 +78,36 @@ func (p Pagination) GetLimitClause() string {
 //	//start, end := GetStartEndPosition(p.Page, p.PageSize, total)
 //	//
 //	//return fmt.Sprintf("LIMIT %d, %d", start, end-start)
+//}
+// GetPagePositions 获取分页的起始值列表
+// @return 返回一个二维数组， 第一维是多少页，第二维是每页[]int{start, end}
+// e,g: 假设11个数的列表，分页pageSize是5，那么返回的是：
+//
+//	[]int{
+//	   []int{0, 5},
+//	   []int{5, 10},
+//	   []int{10, 11},
+//	}
+
+//func GetPagePositions(data any, pageSize int) [][]int {
+//	listData := GetSliceData(data)
+//	if listData == nil {
+//		return nil
+//	}
+//
+//	total := len(listData)
+//	totalPage := int(math.Ceil(float64(total) / float64(pageSize)))
+//
+//	pages := make([][]int, 0)
+//	for i := 0; i < totalPage; i++ {
+//		start := i * pageSize
+//		end := (i + 1) * pageSize
+//		if end > total {
+//			end = total
+//		}
+//
+//		p := []int{start, end}
+//		pages = append(pages, p)
+//	}
+//	return pages
 //}

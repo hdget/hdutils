@@ -1,4 +1,4 @@
-package hdutils
+package reflect
 
 import (
 	"fmt"
@@ -39,8 +39,8 @@ func TestStructSetInterfaceField(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Reflect().StructSet(tt.args.obj, tt.args.filedType, tt.args.val); (err != nil) != tt.wantErr {
-				t.Errorf("StructSet() error = %v, wantErr %v", err, tt.wantErr)
+			if err := StructSet(tt.args.obj, tt.args.filedType, tt.args.val); (err != nil) != tt.wantErr {
+				t.Errorf("StructSet() panic = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -75,8 +75,8 @@ func TestStructSetStructField(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Reflect().StructSet(tt.args.obj, tt.args.filedType, tt.args.val); (err != nil) != tt.wantErr {
-				t.Errorf("StructSet() error = %v, wantErr %v", err, tt.wantErr)
+			if err := StructSet(tt.args.obj, tt.args.filedType, tt.args.val); (err != nil) != tt.wantErr {
+				t.Errorf("StructSet() panic = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -110,15 +110,15 @@ func TestStructGetReceiverMethods(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gots := Reflect().MatchReceiverMethods(tt.args.obj, tt.args.fn)
+			gots := MatchReceiverMethods(tt.args.obj, tt.args.fn)
 			fmt.Println(len(gots))
 		})
 	}
 }
 
 func TestGetFuncSignature(t *testing.T) {
-	type anyFn func(interface{}) any
-	type anyFn1 func(any) interface{}
+	type anyFn func(any) any
+	type anyFn1 func(any) any
 	type args struct {
 		fn any
 	}
@@ -137,8 +137,8 @@ func TestGetFuncSignature(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Reflect().GetFuncSignature(anyFn(nil))
-			got1 := Reflect().GetFuncSignature(anyFn1(nil))
+			got := GetFuncSignature(anyFn(nil))
+			got1 := GetFuncSignature(anyFn1(nil))
 			if got != got1 {
 				t.Errorf("GetFuncSignature() not equal, got: %v, got1: %v", got, got1)
 			}
@@ -153,7 +153,7 @@ func Test_hdReflector_InspectValue(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ValueMeta
+		want *Value
 	}{
 		{
 			name: "Test_hdReflector_InspectValue",
@@ -200,8 +200,7 @@ func Test_hdReflector_InspectValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &hdReflector{}
-			if got := h.InspectValue(tt.args.v); !reflect.DeepEqual(got, tt.want) {
+			if got := InspectValue(tt.args.v); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("InspectValue() = %v, want %v", got, tt.want)
 			}
 		})

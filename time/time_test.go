@@ -1,4 +1,4 @@
-package hdutils
+package time
 
 import (
 	"reflect"
@@ -30,7 +30,7 @@ func TestGetBetweenDays(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GetBetweenDays(LayoutIsoDate, tt.xargs.beginDate, tt.xargs.args...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBetweenDays() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetBetweenDays() panic = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
