@@ -17,7 +17,7 @@ type Pagination struct {
 // NewPagination 获取分页对象
 func NewPagination(page, pageSize int64) Pagination {
 	// 处理当前页面
-	if page == 0 {
+	if page <= 0 {
 		page = 1
 	}
 
