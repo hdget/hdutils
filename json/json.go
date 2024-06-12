@@ -65,7 +65,7 @@ func JsonObject(args ...any) []byte {
 		v = reflect.ValueOf(v.Elem())
 	}
 
-	if v.Kind() != reflect.Struct {
+	if v.Kind() != reflect.Struct || v.Kind() != reflect.Map {
 		return emptyJsonObject
 	} else if v.IsZero() {
 		return emptyJsonObject
