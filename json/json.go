@@ -44,6 +44,10 @@ func JsonArray(args ...any) []byte {
 	}
 
 	v := reflect.ValueOf(args[0])
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+
 	if v.Kind() != reflect.Slice {
 		return emptyJsonArray
 	} else if v.Cap() == 0 {
@@ -62,10 +66,10 @@ func JsonObject(args ...any) []byte {
 
 	v := reflect.ValueOf(args[0])
 	if v.Kind() == reflect.Pointer {
-		v = reflect.ValueOf(v.Elem())
+		v = v.Elem()
 	}
 
-	if v.Kind() != reflect.Struct || v.Kind() != reflect.Map {
+	if !pie.Contains([]reflect.Kind{reflect.Struct, reflect.Map}, v.Kind()) {
 		return emptyJsonObject
 	} else if v.IsZero() {
 		return emptyJsonObject
