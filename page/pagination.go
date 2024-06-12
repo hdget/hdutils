@@ -33,6 +33,16 @@ func NewPagination(page, pageSize int64) Pagination {
 
 // GetStartEndPosition 如果是按列表slice进行翻页的话， 计算slice的起始index
 func GetStartEndPosition(page, pageSize, total int64) (int64, int64) {
+	// 处理当前页面
+	if page <= 0 {
+		page = 1
+	}
+
+	// 处理每页大小
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+
 	start := (page - 1) * pageSize
 	end := page * pageSize
 
