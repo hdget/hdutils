@@ -40,11 +40,11 @@ func CalculatePages(total, pageSize int64) []Page {
 }
 
 // Paginate 分页
-func Paginate[T any](sliceVars []T, pageSize int64) map[int64][]T {
+func Paginate[T any](sliceVars []T, pageSize int64) [][]T {
 	total := int64(len(sliceVars))
 	totalPage := int64(math.Ceil(float64(total) / float64(pageSize)))
 
-	results := make(map[int64][]T)
+	results := make([][]T, totalPage)
 	for i := int64(0); i < totalPage; i++ {
 		start := i * pageSize
 		end := (i + 1) * pageSize
