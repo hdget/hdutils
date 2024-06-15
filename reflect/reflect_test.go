@@ -206,3 +206,52 @@ func Test_hdReflector_InspectValue(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAssignableStruct(t *testing.T) {
+	type args struct {
+		obj any
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "",
+			args: args{
+				obj: struct {
+				}{},
+			},
+			want: false,
+		},
+		{
+			name: "",
+			args: args{
+				obj: 1,
+			},
+			want: false,
+		},
+		{
+			name: "",
+			args: args{
+				obj: map[string]string{},
+			},
+			want: false,
+		},
+		{
+			name: "",
+			args: args{
+				obj: &struct {
+				}{},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsAssignableStruct(tt.args.obj); got != tt.want {
+				t.Errorf("IsAssignableStruct() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

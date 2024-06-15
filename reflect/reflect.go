@@ -16,6 +16,7 @@ type Utils interface {
 	GetFuncSignature(fn any) string                                // 获取函数签名信息
 	InspectValue(v any) Value                                      // 检索Value的信息
 	FuncEqual(fn1, fn2 any) bool                                   // 函数是否相等
+	IsAssignableStruct(obj any) bool                               // 是否是可赋值的结构指针类型
 }
 
 type Value struct {
@@ -29,6 +30,15 @@ type ValueItem struct {
 	Name  string
 	Kind  string
 	Value any
+}
+
+// IsAssignableStruct 是否是可赋值的结构指针类型
+func IsAssignableStruct(obj any) bool {
+	varType := reflect.TypeOf(obj)
+	if varType.Kind() == reflect.Ptr && varType.Elem().Kind() == reflect.Struct {
+		return true
+	}
+	return false
 }
 
 // GetFuncName 从函数实例获取函数名
