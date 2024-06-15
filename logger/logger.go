@@ -7,10 +7,10 @@ import (
 )
 
 type Utils interface {
-	LogDebug(msg string, keyvals ...any)
-	LogWarn(msg string, keyvals ...any)
-	LogError(msg string, keyvals ...any)
-	LogFatal(msg string, keyvals ...any)
+	Debug(msg string, keyvals ...any)
+	Warn(msg string, keyvals ...any)
+	Error(msg string, keyvals ...any)
+	Fatal(msg string, keyvals ...any)
 }
 
 type logLevel string
@@ -22,19 +22,19 @@ const (
 	loggerLevelFatal logLevel = "FTL"
 )
 
-func LogDebug(msg string, keyvals ...any) {
+func Debug(msg string, keyvals ...any) {
 	logPrint(loggerLevelDebug, msg, keyvals...)
 }
 
-func LogWarn(msg string, keyvals ...any) {
+func Warn(msg string, keyvals ...any) {
 	logPrint(loggerLevelWarn, msg, keyvals...)
 }
 
-func LogError(msg string, keyvals ...any) {
+func Error(msg string, keyvals ...any) {
 	logPrint(loggerLevelError, msg, keyvals...)
 }
 
-func LogFatal(msg string, keyvals ...any) {
+func Fatal(msg string, keyvals ...any) {
 	logPrint(loggerLevelFatal, msg, keyvals...)
 }
 
@@ -91,13 +91,13 @@ func logPrint(level logLevel, msg string, keyvals ...any) {
 
 	if len(outputs) > 0 {
 		if errValue != nil {
-			logFn("%s msg=\"%s\" %s panic=\"%v\"", level, msg, strings.Join(outputs, " "), errValue)
+			logFn("%s msg=\"%s\" %s error=\"%v\"", level, msg, strings.Join(outputs, " "), errValue)
 		} else {
 			logFn("%s msg=\"%s\" %s", level, msg, strings.Join(outputs, " "))
 		}
 	} else {
 		if errValue != nil {
-			logFn("%s msg=\"%s\" panic=\"%v\"", level, msg, errValue)
+			logFn("%s msg=\"%s\" error=\"%v\"", level, msg, errValue)
 		} else {
 			logFn("%s msg=\"%s\"", level, msg)
 		}
