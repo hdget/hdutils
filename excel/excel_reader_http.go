@@ -41,46 +41,40 @@ func (r httpExcelReader) ReadSheet(sheetName string) (*Sheet, error) {
 		return nil, errors.Wrapf(err, "read rows, sheet: %s", sheetName)
 	}
 
-	// 读取表头
-	for i := 0; i == r.option.headerRowIndex; i++ {
+	// 读取表头, 跳过r.option.headerRowIndex行
+	for i := 0; i < r.option.headerRowIndex; i++ {
 		rows.Next()
 	}
+
 	headerRow, err := rows.Columns()
 	if err != nil {
 		return nil, errors.Wrapf(err, "read header, sheet: %s", sheetName)
 	}
-	headers := make(map[int]string)
+
+	headerIndexes := make(map[string]int)
+	headers := make([]string, len(headerRow))
 	for i, colCell := range headerRow {
-		headers[i] = text.CleanString(colCell)
+		header := text.CleanString(colCell)
+		headerIndexes[header] = i
+		headers[i] = header
 	}
 
+	s := &Sheet{HeaderIndexes: headerIndexes, Headers: headers, Rows: make([]*SheetRow, 0)}
+
 	// 读取数据
-	rowIndex := 0
-	lines := make([]*SheetRow, 0)
 	for rows.Next() {
-		dataRow, err := rows.Columns()
+		columns, err := rows.Columns()
 		if err != nil {
 			return nil, errors.Wrapf(err, "read data, sheet: %s", sheetName)
 		}
 
-		cells := make([]*SheetCell, 0)
-		for i, colCell := range dataRow {
-			cells = append(cells, &SheetCell{
-				RowIndex: rowIndex,
-				ColIndex: i,
-				ColName:  headers[i],
-				Value:    colCell,
-			})
-		}
-
-		lines = append(lines, &SheetRow{
-			Cells: cells,
-		})
-
-		rowIndex += 1
+		line := &SheetRow{Sheet: s, Columns: make([]string, 0)}
+		line.Columns = append(line.Columns, columns...)
+		
+		s.Rows = append(s.Rows, line)
 	}
 
-	return &Sheet{Headers: headers, Rows: lines}, nil
+	return s, nil
 }
 
 func (r httpExcelReader) ReadAllSheets() ([]*Sheet, error) {
