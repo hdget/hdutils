@@ -11,6 +11,7 @@ type Utils interface {
 	OnlyAlphaNumeric(s string) string
 	OnlyChinese(s string) string
 	CleanString(origStr string, args ...bool) string
+	Truncate(s string, size int) string
 }
 
 var (
@@ -62,4 +63,12 @@ func removeInvisibleCharacter(origStr string) string {
 		}
 		return -1
 	}, origStr)
+}
+
+func Truncate(s string, size int) string {
+	runes := []rune(s)
+	if len(runes) > size {
+		runes = append(runes[:size], []rune("...")...)
+	}
+	return string(runes)
 }
