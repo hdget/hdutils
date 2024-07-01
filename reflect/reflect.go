@@ -17,6 +17,7 @@ type Utils interface {
 	InspectValue(v any) Value                                      // 检索Value的信息
 	FuncEqual(fn1, fn2 any) bool                                   // 函数是否相等
 	IsAssignableStruct(obj any) bool                               // 是否是可赋值的结构指针类型
+	Indirect(a any) any                                            // 通过尽可能的解引用获取底层的类型
 }
 
 type Value struct {
@@ -228,4 +229,21 @@ func GetFuncSignature(fn any) string {
 	}
 
 	return buf.String()
+}
+
+// Indirect returns the value, after dereferencing as many times
+// as necessary to reach the base type (or nil).
+func Indirect(a any) any {
+	if a == nil {
+		return nil
+	}
+	if t := reflect.TypeOf(a); t.Kind() != reflect.Ptr {
+		// Avoid creating a reflect.Value if it's not a pointer.
+		return a
+	}
+	v := reflect.ValueOf(a)
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v.Interface()
 }
