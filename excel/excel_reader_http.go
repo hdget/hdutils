@@ -2,6 +2,7 @@ package excel
 
 import (
 	"github.com/hdget/hdutils/text"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/xuri/excelize/v2"
 	"net/http"
@@ -14,6 +15,12 @@ type httpExcelReader struct {
 }
 
 func NewHttpReader(url string, options ...ReaderOption) (ExcelReader, error) {
+	var option excelReaderOption
+	err := copier.Copy(&option, &defaultExcelReaderOption)
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -28,7 +35,10 @@ func NewHttpReader(url string, options ...ReaderOption) (ExcelReader, error) {
 		return nil, err
 	}
 
-	reader := &httpExcelReader{File: f, option: defaultExcelReaderOption}
+	reader := &httpExcelReader{
+		File:   f,
+		option: &option,
+	}
 	for _, apply := range options {
 		apply(reader.option)
 	}
@@ -70,7 +80,7 @@ func (r httpExcelReader) ReadSheet(sheetName string) (*Sheet, error) {
 
 		line := &SheetRow{Sheet: s, Columns: make([]string, 0)}
 		line.Columns = append(line.Columns, columns...)
-		
+
 		s.Rows = append(s.Rows, line)
 	}
 

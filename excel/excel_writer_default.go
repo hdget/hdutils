@@ -2,6 +2,7 @@ package excel
 
 import (
 	"fmt"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/xuri/excelize/v2"
 	"reflect"
@@ -15,9 +16,15 @@ type excelWriterImpl struct {
 }
 
 func NewWriter(options ...WriterOption) (ExcelWriter, error) {
+	var option excelWriterOption
+	err := copier.Copy(&option, defaultExcelWriterOption)
+	if err != nil {
+		return nil, err
+	}
+
 	writer := &excelWriterImpl{
 		File:       excelize.NewFile(),
-		option:     defaultExcelWriterOption,
+		option:     &option,
 		cellStyles: make(map[string]int),
 	}
 

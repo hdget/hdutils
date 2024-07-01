@@ -17,7 +17,7 @@ type excelWriterOption struct {
 }
 
 var (
-	defaultExcelWriterOption = &excelWriterOption{
+	defaultExcelWriterOption = excelWriterOption{
 		defaultSheetName: "Sheet1",
 		colStyle: &excelize.Style{
 			NumFmt: 49, // '@'文本占位符。单个@的作用是引用单元格内输入的原始内容，将其以文本格式显示出来,

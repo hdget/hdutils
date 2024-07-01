@@ -10,7 +10,7 @@ type excelReaderOption struct {
 }
 
 var (
-	defaultExcelReaderOption = &excelReaderOption{
+	defaultExcelReaderOption = excelReaderOption{
 		headerRowIndex: 1,
 	}
 )
