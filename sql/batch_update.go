@@ -1,81 +1,111 @@
 package sql
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/hdget/hdutils/convert"
 	"github.com/pkg/errors"
-	"text/template"
+	"strings"
 )
 
 type BatchUpdater interface {
-	Add(whenValue, thenValue any) BatchUpdater
+	Set(setColumn string, value any) BatchUpdater
+	Case(caseSetColumn, caseWhenColumn string) BatchUpdater
+	When(whenValue, thenValue any) BatchUpdater
 	Generate() (string, error)
 }
 
 const (
 	templateBatchUpdate = `
-UPDATE {{.Table}} SET {{.UpdateSet}} = 
-CASE
-	{{range .Cases}}
-	WHEN {{$.WhenColumn}} = {{formatValue .WhenValue}} THEN {{formatValue .ThenValue}}
-	{{end}}
-END
-WHERE {{.WhenColumn}} IN ({{range $index, $element := .Cases}}{{formatValue $element.WhenValue}}{{ if lt $index $.LastIndex }},{{ end }}{{end}});`
+UPDATE %s SET %s = CASE 
+%s 
+END WHERE %s IN (%s)`
 )
 
 type mysqlBatchUpdater struct {
-	Table      string
-	UpdateSet  string
-	WhenColumn string
-	LastIndex  int
-	Cases      []*mysqlBatchUpdateCase
+	table          string
+	caseSetColumn  string        // case when中更新的字段
+	caseWhenColumn string        // case when中比较的字段
+	otherSets      []*setClause  // 其他同时更新的子句
+	whens          []*whenClause // 条件更新的子句
 }
 
-type mysqlBatchUpdateCase struct {
-	WhenValue any
-	ThenValue any
+type setClause struct {
+	column string
+	value  any
 }
 
-func NewMysqlBatchUpdater(table, updateSet, whenColumn string) BatchUpdater {
+type whenClause struct {
+	whenValue any
+	thenValue any
+}
+
+func NewMysqlBatchUpdater(table string) BatchUpdater {
 	return &mysqlBatchUpdater{
-		Table:      table,
-		UpdateSet:  updateSet,
-		WhenColumn: whenColumn,
-		Cases:      make([]*mysqlBatchUpdateCase, 0),
+		table:     table,
+		otherSets: make([]*setClause, 0),
+		whens:     make([]*whenClause, 0),
 	}
 }
 
-func (u *mysqlBatchUpdater) Add(whenValue, thenValue any) BatchUpdater {
-	u.Cases = append(u.Cases, &mysqlBatchUpdateCase{
-		WhenValue: whenValue,
-		ThenValue: thenValue,
+// Set 批量更新的时候同时更新的字段
+func (u *mysqlBatchUpdater) Set(setColumn string, value any) BatchUpdater {
+	u.otherSets = append(u.otherSets, &setClause{
+		column: setColumn,
+		value:  value,
+	})
+	return u
+}
+
+// Case 更新和比较的字段
+func (u *mysqlBatchUpdater) Case(caseSetColumn, caseWhenColumn string) BatchUpdater {
+	u.caseSetColumn = caseSetColumn
+	u.caseWhenColumn = caseWhenColumn
+	return u
+}
+
+// When 条件更新
+func (u *mysqlBatchUpdater) When(whenValue, thenValue any) BatchUpdater {
+	u.whens = append(u.whens, &whenClause{
+		whenValue: whenValue,
+		thenValue: thenValue,
 	})
 	return u
 }
 
 func (u *mysqlBatchUpdater) Generate() (string, error) {
-	if u.Table == "" || u.UpdateSet == "" || u.WhenColumn == "" || len(u.Cases) == 0 {
+	if u.table == "" || u.caseSetColumn == "" || len(u.whens) == 0 {
 		return "", errors.New("invalid parameter")
 	}
-	t, err := template.New("").Funcs(template.FuncMap{
-		"formatValue": u.formatValue,
-	}).Parse(templateBatchUpdate)
-	if err != nil {
-		return "", err
+
+	setParts := make([]string, 0)
+	// 如果有额外要更新的字段，组装起来
+	for _, otherSet := range u.otherSets {
+		setParts = append(setParts, fmt.Sprintf("%s=%s", u.escape(otherSet.column), u.formatValue(otherSet.value)))
 	}
 
-	// 获取最后一项的index，方便计算逗号的个数
-	u.LastIndex = len(u.Cases) - 1
+	// 添加条件更新的字段
+	setParts = append(setParts, u.escape(u.caseSetColumn))
 
-	// 渲染
-	var buf bytes.Buffer
-	err = t.Execute(&buf, u)
-	if err != nil {
-		return "", err
+	// 构造when部分
+	whenParts := make([]string, 0)
+	whereInParts := make([]string, 0)
+	for _, when := range u.whens {
+		whenParts = append(whenParts, fmt.Sprintf("\tWHEN %s = %s THEN %s", u.escape(u.caseWhenColumn), u.formatValue(when.whenValue), u.formatValue(when.thenValue)))
+		whereInParts = append(whereInParts, u.formatValue(when.whenValue))
 	}
 
-	return buf.String(), nil
+	return fmt.Sprintf(
+		templateBatchUpdate,
+		u.escape(u.table),
+		strings.Join(setParts, ","),    // 填入set部分
+		strings.Join(whenParts, " \n"), // 填入when部分
+		u.escape(u.caseWhenColumn),
+		strings.Join(whereInParts, ","), // 填入where in部分
+	), nil
+}
+
+func (u *mysqlBatchUpdater) escape(s string) string {
+	return fmt.Sprintf("`%s`", s)
 }
 
 func (u *mysqlBatchUpdater) formatValue(value any) string {
