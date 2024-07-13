@@ -1,6 +1,7 @@
 package excel
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -14,6 +15,10 @@ type excelWriterImpl struct {
 	colStyle   int            // 列样式
 	cellStyles map[string]int // 单元格样式， axis=>style value
 }
+
+const (
+	allColAxis = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
 
 func NewWriter(options ...WriterOption) (ExcelWriter, error) {
 	var option excelWriterOption
@@ -61,41 +66,44 @@ func (w *excelWriterImpl) CreateSheet(sheetName string, rows []any) error {
 	for i := 0; i < rowType.NumField(); i++ {
 		// 输出表头
 		colName := rowType.Field(i).Tag.Get("col_name")
+		if colName == "" {
+			continue
+		}
+
+		// 如果设置了列坐标，使用列坐标，否则自动生成列坐标
 		colAxis := rowType.Field(i).Tag.Get("col_axis")
+		if colAxis == "" {
+			colAxis = w.genColAxis(i)
+		}
 
-		if colName != "" {
-			axis := fmt.Sprintf("%s%d", colAxis, 1)
-
-			err = w.SetCellValue(sheetName, axis, colName)
-			if err != nil {
-				return errors.Wrap(err, "generate header")
-			}
+		// 设置表头
+		headerAxis := fmt.Sprintf("%s%d", colAxis, 1)
+		err = w.SetCellValue(sheetName, headerAxis, colName)
+		if err != nil {
+			return errors.Wrap(err, "generate header")
 		}
 
 		// 设置所有有效列的样式
-		if colAxis != "" {
-			err = w.SetColStyle(sheetName, colAxis, w.colStyle)
+		err = w.SetColStyle(sheetName, colAxis, w.colStyle)
+		if err != nil {
+			return errors.Wrap(err, "set col colStyle")
+		}
+
+		// 输出行数据
+		for line, r := range rows {
+			lineAxis := fmt.Sprintf("%s%d", colAxis, line+2)
+			value := reflect.ValueOf(r).Elem().FieldByName(rowType.Field(i).Name)
+
+			if cellStyle, exist := w.cellStyles[lineAxis]; exist {
+				_ = w.SetCellStyle(sheetName, lineAxis, lineAxis, cellStyle)
+			}
+
+			err = w.SetCellValue(sheetName, lineAxis, value)
 			if err != nil {
-				return errors.Wrap(err, "set col colStyle")
+				return errors.Wrapf(err, "set cell value, sheetname: %s, axis: %s, value: %v", sheetName, lineAxis, value)
 			}
 		}
 
-		// 如果有列坐标的输出行数据
-		if colAxis != "" {
-			for line, r := range rows {
-				axis := fmt.Sprintf("%s%d", colAxis, line+2)
-				value := reflect.ValueOf(r).Elem().FieldByName(rowType.Field(i).Name)
-
-				if cellStyle, exist := w.cellStyles[axis]; exist {
-					_ = w.SetCellStyle(sheetName, axis, axis, cellStyle)
-				}
-
-				err = w.SetCellValue(sheetName, axis, value)
-				if err != nil {
-					return errors.Wrapf(err, "set cell value, sheetname: %s, axis: %s, value: %v", sheetName, axis, value)
-				}
-			}
-		}
 	}
 
 	return nil
@@ -133,4 +141,15 @@ func (w *excelWriterImpl) getRowType(rows []any) (reflect.Type, error) {
 	}
 
 	return firstRowType, nil
+}
+
+func (w *excelWriterImpl) genColAxis(index int) string {
+	mod := index % 26
+	s := allColAxis[mod : mod+1]
+	var buf bytes.Buffer
+	for i := 1; i <= index/26; i++ {
+		buf.WriteString("A")
+	}
+	buf.WriteString(s)
+	return buf.String()
 }
