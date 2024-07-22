@@ -14,7 +14,7 @@ type Utils interface {
 }
 
 var (
-	regexIsMobile = regexp.MustCompile(`^1{3-9}\d{9}$`)
+	regexIsMobile = regexp.MustCompile(`^1[3-9]\d{9}$`)
 )
 
 // IsValidMobile check if the text is valid chinese mobile number
