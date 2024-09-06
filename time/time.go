@@ -2,6 +2,7 @@ package time
 
 import (
 	"fmt"
+	"github.com/golang-module/carbon/v2"
 	"github.com/pkg/errors"
 	"strings"
 	"time"
@@ -12,9 +13,9 @@ var (
 	LayoutIsoDate       = "2006-01-02"
 )
 
-// ParseStrTime iso time string转化为时间，layout必须为 "2006-01-02 15:04:05"
-func ParseStrTime(value string) (*time.Time, error) {
-	tokens := strings.Split(value, " ")
+// ParseTime iso time string转化为时间，layout必须为"2006-01-02 15:04:05"
+func ParseTime(strTime string) (time.Time, error) {
+	tokens := strings.Split(strTime, " ")
 
 	var layout string
 	switch len(tokens) {
@@ -23,31 +24,50 @@ func ParseStrTime(value string) (*time.Time, error) {
 	case 2:
 		layout = "2006-01-02 15:04:05"
 	default:
-		return nil, errors.New("invalid time format, it is 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'")
+		return time.Time{}, errors.New("invalid time format, it is 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'")
 	}
 
-	t, err := time.ParseInLocation(layout, value, DefaultTimeLocation)
+	t, err := time.ParseInLocation(layout, strTime, DefaultTimeLocation)
 	if err != nil {
-		return nil, errors.Wrap(err, "parse in location")
+		return time.Time{}, errors.Wrap(err, "parse in location")
 	}
 
-	return &t, nil
+	return t, nil
+}
+
+// GetStartEndDayTime 将字符串日期范围转换成某天的time.Time日期范围
+func GetStartEndDayTime(strStartDate, strEndDate string) (time.Time, time.Time, error) {
+	startDayTime, endDayTime := carbon.Parse(strStartDate).StartOfDay().StdTime(), carbon.Parse(strEndDate).EndOfDay().StdTime()
+
+	if startDayTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid start date, value: %s", strStartDate)
+	}
+
+	if endDayTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid end date, value: %s", strEndDate)
+	}
+
+	if startDayTime.After(endDayTime) {
+		return time.Time{}, time.Time{}, errors.New("end time should equal or late than begin time")
+	}
+
+	return startDayTime, endDayTime, nil
 }
 
 // IsValidBeginEndTime check if it is valid begin/end time
 func IsValidBeginEndTime(strBeginTime, strEndTime string) error {
 	// 检查date是否是有效的日期
-	beginTime, err := ParseStrTime(strBeginTime)
+	beginTime, err := ParseTime(strBeginTime)
 	if err != nil {
 		return errors.Wrap(err, "invalid begin time")
 	}
 
-	endTime, err := ParseStrTime(strEndTime)
+	endTime, err := ParseTime(strEndTime)
 	if err != nil {
 		return errors.Wrap(err, "invalid end time")
 	}
 
-	if beginTime.After(*endTime) {
+	if beginTime.After(endTime) {
 		return errors.New("end time should larger than begin time")
 	}
 	return nil
