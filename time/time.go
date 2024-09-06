@@ -2,6 +2,7 @@ package time
 
 import (
 	"fmt"
+	"github.com/golang-module/carbon/v2"
 	"github.com/pkg/errors"
 	"strings"
 	"time"
@@ -12,45 +13,42 @@ var (
 	LayoutIsoDate       = "2006-01-02"
 )
 
-// ParseStrTime iso time string转化为时间，layout必须为 "2006-01-02 15:04:05"
-func ParseStrTime(value string) (*time.Time, error) {
-	tokens := strings.Split(value, " ")
-
-	var layout string
-	switch len(tokens) {
-	case 1:
-		layout = "2006-01-02"
-	case 2:
-		layout = "2006-01-02 15:04:05"
-	default:
-		return nil, errors.New("invalid time format, it is 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'")
+// ToDayBeginEndTime 将字符串日期范围转换成某天的time.Time日期范围
+func ToDayBeginEndTime(strBeginDate, strEndDate string) (time.Time, time.Time, error) {
+	dayBeginTime := carbon.Parse(strBeginDate).StartOfDay().StdTime()
+	if dayBeginTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid begin date, value: %s", strBeginDate)
 	}
 
-	t, err := time.ParseInLocation(layout, value, DefaultTimeLocation)
-	if err != nil {
-		return nil, errors.Wrap(err, "parse in location")
+	dayEndTime := carbon.Parse(strEndDate).EndOfDay().StdTime()
+	if dayEndTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid end date, value: %s", strEndDate)
 	}
 
-	return &t, nil
+	if dayBeginTime.After(dayEndTime) {
+		return time.Time{}, time.Time{}, errors.New("end date should equal or late than begin date")
+	}
+
+	return dayBeginTime, dayEndTime, nil
 }
 
-// IsValidBeginEndTime check if it is valid begin/end time
-func IsValidBeginEndTime(strBeginTime, strEndTime string) error {
-	// 检查date是否是有效的日期
-	beginTime, err := ParseStrTime(strBeginTime)
-	if err != nil {
-		return errors.Wrap(err, "invalid begin time")
+// ToBeginEndTime 将字符串日期范围转换成指定的time.Time日期范围
+func ToBeginEndTime(strBeginTime, strEndTime string) (time.Time, time.Time, error) {
+	beginTime := carbon.Parse(strBeginTime).StdTime()
+	if beginTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid begin time, value: %s", strBeginTime)
 	}
 
-	endTime, err := ParseStrTime(strEndTime)
-	if err != nil {
-		return errors.Wrap(err, "invalid end time")
+	endTime := carbon.Parse(strEndTime).StdTime()
+	if endTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid end time, value: %s", strEndTime)
 	}
 
-	if beginTime.After(*endTime) {
-		return errors.New("end time should larger than begin time")
+	if beginTime.After(endTime) {
+		return time.Time{}, time.Time{}, errors.New("end time should equal or late than begin time")
 	}
-	return nil
+
+	return beginTime, endTime, nil
 }
 
 // GetBetweenDays
