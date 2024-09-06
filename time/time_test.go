@@ -66,7 +66,7 @@ func TestToBeginEndDayTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := ToBeginEndDayTime(tt.args.strBeginDate, tt.args.strEndDate)
+			got, got1, err := ToDayBeginEndTime(tt.args.strBeginDate, tt.args.strEndDate)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToBeginEndDayTime() error = %v, wantErr %v", err, tt.wantErr)
 				return

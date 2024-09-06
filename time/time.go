@@ -13,64 +13,42 @@ var (
 	LayoutIsoDate       = "2006-01-02"
 )
 
-// ParseTime iso time string转化为时间，layout必须为"2006-01-02 15:04:05"
-func ParseTime(strTime string) (time.Time, error) {
-	tokens := strings.Split(strTime, " ")
-
-	var layout string
-	switch len(tokens) {
-	case 1:
-		layout = "2006-01-02"
-	case 2:
-		layout = "2006-01-02 15:04:05"
-	default:
-		return time.Time{}, errors.New("invalid time format, it is 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'")
+// ToDayBeginEndTime 将字符串日期范围转换成某天的time.Time日期范围
+func ToDayBeginEndTime(strBeginDate, strEndDate string) (time.Time, time.Time, error) {
+	dayBeginTime := carbon.Parse(strBeginDate).StartOfDay().StdTime()
+	if dayBeginTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid begin date, value: %s", strBeginDate)
 	}
 
-	t, err := time.ParseInLocation(layout, strTime, DefaultTimeLocation)
-	if err != nil {
-		return time.Time{}, errors.Wrap(err, "parse in location")
-	}
-
-	return t, nil
-}
-
-// GetStartEndDayTime 将字符串日期范围转换成某天的time.Time日期范围
-func GetStartEndDayTime(strStartDate, strEndDate string) (time.Time, time.Time, error) {
-	startDayTime, endDayTime := carbon.Parse(strStartDate).StartOfDay().StdTime(), carbon.Parse(strEndDate).EndOfDay().StdTime()
-
-	if startDayTime.IsZero() {
-		return time.Time{}, time.Time{}, fmt.Errorf("invalid start date, value: %s", strStartDate)
-	}
-
-	if endDayTime.IsZero() {
+	dayEndTime := carbon.Parse(strEndDate).EndOfDay().StdTime()
+	if dayEndTime.IsZero() {
 		return time.Time{}, time.Time{}, fmt.Errorf("invalid end date, value: %s", strEndDate)
 	}
 
-	if startDayTime.After(endDayTime) {
-		return time.Time{}, time.Time{}, errors.New("end time should equal or late than begin time")
+	if dayBeginTime.After(dayEndTime) {
+		return time.Time{}, time.Time{}, errors.New("end date should equal or late than begin date")
 	}
 
-	return startDayTime, endDayTime, nil
+	return dayBeginTime, dayEndTime, nil
 }
 
-// IsValidBeginEndTime check if it is valid begin/end time
-func IsValidBeginEndTime(strBeginTime, strEndTime string) error {
-	// 检查date是否是有效的日期
-	beginTime, err := ParseTime(strBeginTime)
-	if err != nil {
-		return errors.Wrap(err, "invalid begin time")
+// ToBeginEndTime 将字符串日期范围转换成指定的time.Time日期范围
+func ToBeginEndTime(strBeginTime, strEndTime string) (time.Time, time.Time, error) {
+	beginTime := carbon.Parse(strBeginTime).StdTime()
+	if beginTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid begin time, value: %s", strBeginTime)
 	}
 
-	endTime, err := ParseTime(strEndTime)
-	if err != nil {
-		return errors.Wrap(err, "invalid end time")
+	endTime := carbon.Parse(strEndTime).StdTime()
+	if endTime.IsZero() {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid end time, value: %s", strEndTime)
 	}
 
 	if beginTime.After(endTime) {
-		return errors.New("end time should larger than begin time")
+		return time.Time{}, time.Time{}, errors.New("end time should equal or late than begin time")
 	}
-	return nil
+
+	return beginTime, endTime, nil
 }
 
 // GetBetweenDays
