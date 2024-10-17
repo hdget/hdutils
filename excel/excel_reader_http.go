@@ -69,7 +69,7 @@ func (r httpExcelReader) ReadSheet(sheetName string) (*Sheet, error) {
 		headers[i] = header
 	}
 
-	s := &Sheet{HeaderIndexes: headerIndexes, Headers: headers, Rows: make([]*SheetRow, 0)}
+	s := &Sheet{Name: sheetName, HeaderIndexes: headerIndexes, Headers: headers, Rows: make([]*SheetRow, 0)}
 
 	// 读取数据
 	for rows.Next() {

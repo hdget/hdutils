@@ -8,6 +8,7 @@ import (
 )
 
 type Sheet struct {
+	Name          string
 	HeaderIndexes map[string]int // headerName => index
 	Headers       []string       // headers
 	Rows          []*SheetRow
